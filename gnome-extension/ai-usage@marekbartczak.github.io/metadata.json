@@ -1,0 +1,9 @@
+{
+  "uuid": "ai-usage@marekbartczak.github.io",
+  "name": "AI Usage",
+  "description": "Shows Claude Code and Codex CLI usage limits (5h session, weekly) on the top bar.",
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "settings-schema": "org.gnome.shell.extensions.ai-usage",
+  "url": "https://github.com/MarekBartczak/gnome-ai-usage",
+  "version": 2
+}

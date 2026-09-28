@@ -1,0 +1,10 @@
+.ai-usage-pill { spacing: 12px; }
+.ai-usage-group { spacing: 4px; }
+.ai-usage-icon { padding: 0 2px 0 0; }
+.ai-usage-metric { min-width: 18px; text-align: center; }
+.ai-usage-week { color: rgba(255, 255, 255, 0.65); }
+.ai-usage-warning { color: #f8e45c; }
+.ai-usage-critical { color: #ff7b63; font-weight: bold; }
+.ai-usage-unknown { color: rgba(255, 255, 255, 0.5); }
+.ai-usage-stale { opacity: 0.55; }
+.ai-usage-dim { color: rgba(255, 255, 255, 0.6); }

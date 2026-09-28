@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ai-usage" path="/org/gnome/shell/extensions/ai-usage/">
+    <key name="status-file-path" type="s">
+      <default>''</default>
+      <summary>Status file path</summary>
+      <description>Absolute path to status.json. Empty means $XDG_DATA_HOME/ai-usage-module/status.json.</description>
+    </key>
+    <key name="refresh-interval-seconds" type="u">
+      <default>60</default>
+      <summary>Reload interval</summary>
+      <description>Fallback polling interval for reloading status.json (changes are also picked up via a file monitor).</description>
+    </key>
+    <key name="panel-profile-ids" type="as">
+      <default>[]</default>
+      <summary>Profiles on the top bar</summary>
+      <description>Profile ids shown on the top bar. Empty means the first profile of each provider.</description>
+    </key>
+    <key name="refresh-command" type="s">
+      <default>'systemctl --user start ai-usage-probe.service'</default>
+      <summary>Refresh command</summary>
+      <description>Command run by "Refresh now" to update status.json.</description>
+    </key>
+  </schema>
+</schemalist>

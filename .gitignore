@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.egg-info/
+dist/
+gschemas.compiled
+
+# Local runtime data if the project root is used as --root during experiments.
+config.json
+status.json
+profiles/

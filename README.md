@@ -20,6 +20,20 @@ sudo apt install ./gnome-ai-usage.deb
 ai-usage setup
 ```
 
+### Updates
+
+Installing the package also adds its APT repository (`/etc/apt/sources.list.d/gnome-ai-usage.sources`,
+signed with the key in `/usr/share/keyrings/`). New versions then arrive like any other Ubuntu update:
+
+- automatically within a day via `unattended-upgrades` (on by default in Ubuntu),
+- or right away with `sudo apt update && sudo apt upgrade` / Software Updater.
+
+The CLI side takes effect immediately. GNOME Shell loads the new extension code after the next login.
+To turn off automatic installs but keep update notifications, delete
+`/etc/apt/apt.conf.d/52gnome-ai-usage-unattended`.
+
+### Setup
+
 `ai-usage setup` (run as your normal user, not root):
 
 1. finds logged-in CLIs in `~/.claude`, `~/.claude-*`, `~/.codex`, `~/.codex-*` (plus `$CLAUDE_CONFIG_DIR` / `$CODEX_HOME`),
@@ -72,7 +86,7 @@ Change the interval with `ai-usage setup --interval 2min`. Going below ~2 minute
 ```sh
 systemctl --user disable --now ai-usage-probe.timer
 gnome-extensions disable ai-usage@marekbartczak.github.io
-sudo apt remove gnome-ai-usage
+sudo apt purge gnome-ai-usage                   # purge also removes the APT source
 rm -rf ~/.local/share/ai-usage-module
 ```
 
@@ -86,7 +100,8 @@ for t in tests/gnome/*.js; do gjs -m "$t"; done
 ./packaging/build-deb.sh                        # dist/gnome-ai-usage_<version>_all.deb
 ```
 
-Releases: push a `v*` tag and GitHub Actions builds the `.deb` and attaches it to the release.
+Releases: push a `v*` tag. GitHub Actions builds the `.deb`, attaches it to the release, and publishes the signed
+APT repository to GitHub Pages (`gh-pages` branch, key in the `APT_SIGNING_KEY` secret).
 
 ## License
 

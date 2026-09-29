@@ -53,6 +53,24 @@ UNIT
 
 cp "${REPO_ROOT}/LICENSE" "${PKG}/usr/share/doc/gnome-ai-usage/copyright"
 
+# Self-registering APT source (like Chrome/VS Code): after the first manual install, updates arrive
+# through apt, and unattended-upgrades installs them automatically.
+mkdir -p "${PKG}/usr/share/keyrings" "${PKG}/etc/apt/sources.list.d" "${PKG}/etc/apt/apt.conf.d"
+cp "${REPO_ROOT}/packaging/apt/gnome-ai-usage-archive-keyring.gpg" "${PKG}/usr/share/keyrings/"
+cat > "${PKG}/etc/apt/sources.list.d/gnome-ai-usage.sources" <<'SRC'
+Types: deb
+URIs: https://marekbartczak.github.io/gnome-ai-usage/apt
+Suites: stable
+Components: main
+Signed-By: /usr/share/keyrings/gnome-ai-usage-archive-keyring.gpg
+SRC
+cat > "${PKG}/etc/apt/apt.conf.d/52gnome-ai-usage-unattended" <<'CONF'
+// Let unattended-upgrades install gnome-ai-usage updates automatically. Delete this file to opt out.
+Unattended-Upgrade::Allowed-Origins:: "gnome-ai-usage:stable";
+CONF
+printf '%s\n' /etc/apt/sources.list.d/gnome-ai-usage.sources /etc/apt/apt.conf.d/52gnome-ai-usage-unattended \
+    > "${PKG}/DEBIAN/conffiles"
+
 cat > "${PKG}/DEBIAN/control" <<CONTROL
 Package: gnome-ai-usage
 Version: ${VERSION}
@@ -72,7 +90,11 @@ cat > "${PKG}/DEBIAN/postinst" <<'SH'
 #!/bin/sh
 set -e
 if [ "$1" = "configure" ]; then
-    echo "gnome-ai-usage installed. As your normal user run:  ai-usage setup"
+    if [ -z "$2" ]; then
+        echo "gnome-ai-usage installed. As your normal user run:  ai-usage setup"
+    else
+        echo "gnome-ai-usage upgraded from $2. The top bar picks up extension changes after the next login."
+    fi
 fi
 SH
 chmod 755 "${PKG}/DEBIAN/postinst"

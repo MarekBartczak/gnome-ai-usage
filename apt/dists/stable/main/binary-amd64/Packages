@@ -1,0 +1,19 @@
+Package: gnome-ai-usage
+Architecture: all
+Version: 0.4.0
+Priority: optional
+Section: gnome
+Maintainer: Marek Bartczak <noreply@github.com>
+Depends: python3 (>= 3.11), gnome-shell (>= 45)
+Filename: pool/main/gnome-ai-usage_0.4.0_all.deb
+Size: 22830
+MD5sum: 477d477d78d201f3316da66eb865f56f
+SHA1: 2f5b68cce0ca0c000baff0fa6dc6b19eda335cac
+SHA256: 4d4181e818e9f2bbdeba79171cd7cf11ff016d77a220a2cf4785290546cad890
+SHA512: 6107657722a57656158d844a84cc5875eaf3e038cd39e42f348e6f46f1bb027299f74f820634d5f25470bab8c446e7fa128dd48d08bc6be55a4860d4c191d6dc
+Homepage: https://github.com/MarekBartczak/gnome-ai-usage
+Description: Claude Code and Codex CLI usage limits on the GNOME top bar
+ Reads the OAuth tokens of already logged-in Claude Code and Codex CLIs and
+ shows the 5-hour and weekly usage percentages in the GNOME Shell top bar.
+ After installing, run "ai-usage setup" as your normal user.
+

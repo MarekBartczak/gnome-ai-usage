@@ -8,7 +8,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from pathlib import Path
 
@@ -21,7 +21,11 @@ CLAUDE_TOKEN_URL = "https://api.anthropic.com/v1/oauth/token"
 CODEX_USAGE_URL = "https://chatgpt.com/backend-api/wham/usage"
 FIVE_HOURS_SECONDS = 5 * 3600
 SEVEN_DAYS_SECONDS = 7 * 86400
-EXPIRY_MARGIN_SECONDS = 60
+# Wake the CLI a bit before expiry so the panel never goes stale between two timer runs.
+EXPIRY_MARGIN_SECONDS = 10 * 60
+WAKE_CODES = {"auth_expired", "auth_invalid"}
+
+Waker = Callable[[Profile, Path], bool]
 
 
 class ProbeFailure(Exception):
@@ -217,7 +221,7 @@ def claude_access_token(config_dir: Path, may_refresh: bool) -> str:
         return oauth["accessToken"]
     if not may_refresh:
         # Refresh tokens rotate; refreshing a linked CLI dir ourselves would log that CLI out.
-        raise ProbeFailure("auth_expired", "Claude token expired; run claude with this config dir to refresh it")
+        raise ProbeFailure("auth_expired", "Claude token expired and the CLI could not refresh it; run claude with this config dir")
     return refresh_claude_tokens(credentials_path, credentials)
 
 
@@ -253,7 +257,7 @@ def fetch_codex_usage(config_dir: Path) -> str:
     access_token = tokens["access_token"]
     exp = jwt_expiry(access_token)
     if exp is not None and exp <= time.time() + EXPIRY_MARGIN_SECONDS:
-        raise ProbeFailure("auth_expired", "Codex token expired; run codex with this config dir to refresh it")
+        raise ProbeFailure("auth_expired", "Codex token expired and the CLI could not refresh it; run codex with this config dir")
 
     headers = {"Authorization": f"Bearer {access_token}", "User-Agent": "codex-cli"}
     if isinstance(tokens.get("account_id"), str):
@@ -285,11 +289,20 @@ def build_entry(
     )
 
 
+def fetch_with_wake(fetch: Callable[[], str], profile: Profile, config_dir: Path, wake: Waker | None) -> str:
+    try:
+        return fetch()
+    except ProbeFailure as exc:
+        if exc.code not in WAKE_CODES or wake is None or not wake(profile, config_dir):
+            raise
+    return fetch()
+
+
 class ProviderAdapter:
     provider: str
     login_command: list[str]
 
-    def probe(self, profile: Profile, config_dir: Path, now_iso: str) -> StatusEntry:
+    def probe(self, profile: Profile, config_dir: Path, now_iso: str, wake: Waker | None = None) -> StatusEntry:
         raise NotImplementedError
 
 
@@ -297,10 +310,12 @@ class ClaudeAdapter(ProviderAdapter):
     provider = "claude"
     login_command = ["claude", "auth", "login"]
 
-    def probe(self, profile: Profile, config_dir: Path, now_iso: str) -> StatusEntry:
+    def probe(self, profile: Profile, config_dir: Path, now_iso: str, wake: Waker | None = None) -> StatusEntry:
         account = claude_account_email(config_dir)
         try:
-            raw = fetch_claude_usage(config_dir, may_refresh=profile.config_dir is None)
+            raw = fetch_with_wake(
+                lambda: fetch_claude_usage(config_dir, may_refresh=profile.config_dir is None), profile, config_dir, wake
+            )
             usage = parse_claude_usage_response(raw)
         except ProbeFailure as exc:
             return build_entry(profile, now_iso, account, [], error=ProbeError(exc.code, exc.message))
@@ -313,9 +328,10 @@ class CodexAdapter(ProviderAdapter):
     provider = "codex"
     login_command = ["codex", "login"]
 
-    def probe(self, profile: Profile, config_dir: Path, now_iso: str) -> StatusEntry:
+    def probe(self, profile: Profile, config_dir: Path, now_iso: str, wake: Waker | None = None) -> StatusEntry:
         try:
-            account, plan, usage = parse_codex_usage_response(fetch_codex_usage(config_dir))
+            raw = fetch_with_wake(lambda: fetch_codex_usage(config_dir), profile, config_dir, wake)
+            account, plan, usage = parse_codex_usage_response(raw)
         except ProbeFailure as exc:
             return build_entry(profile, now_iso, None, [], error=ProbeError(exc.code, exc.message))
         except (json.JSONDecodeError, AttributeError) as exc:

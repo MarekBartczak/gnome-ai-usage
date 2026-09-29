@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ai_usage.store import Store
+from ai_usage.wake import find_cli
 
 EXTENSION_UUID = "ai-usage@marekbartczak.github.io"
 SERVICE_NAME = "ai-usage-probe.service"
@@ -195,6 +196,13 @@ def run_setup(store: Store, root: Path | None, interval: str, with_system: bool 
     if not profiles:
         print("No logged-in Claude Code or Codex CLI found. Log in first (`claude`, `codex login`) and rerun setup.")
         return 1
+
+    # Remember where the CLIs live now: the timer runs with a minimal PATH (nvm, ~/.local/bin, ...).
+    tools = {provider: path for provider in ("claude", "codex") if (path := find_cli(provider))}
+    store.save_tools(tools)
+    for provider in ("claude", "codex"):
+        if any(profile.provider == provider for profile in profiles) and provider not in tools:
+            print(f"warning: `{provider}` not found on PATH; expired tokens will not be refreshed automatically")
 
     if with_system:
         print(install_timer(root, interval))

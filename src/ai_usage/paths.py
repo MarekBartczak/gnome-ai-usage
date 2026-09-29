@@ -63,5 +63,8 @@ def build_linked_env(provider: str, config_dir: Path, base_env: Mapping[str, str
     env = dict(base_env if base_env is not None else os.environ)
     for name in PROVIDER_DIR_ENV.values():
         env.pop(name, None)
+    # Variables of a parent Claude Code session would make the child think it is nested.
+    for name in [key for key in env if key == "CLAUDECODE" or key.startswith("CLAUDE_CODE_")]:
+        env.pop(name)
     env[PROVIDER_DIR_ENV[provider]] = str(config_dir)
     return env

@@ -16,8 +16,20 @@ Isolated profiles (`profile add` + `profile login`) still work, but their tokens
 after ~4 months without use the Claude refresh token returned `invalid_grant`.
 
 Linked profiles never refresh tokens themselves. Both providers rotate refresh tokens, so refreshing
-from outside would log the real CLI out. An expired token yields `auth_expired`; the last good numbers
-are kept with state `stale` until the CLI is used again.
+from outside would log the real CLI out. Instead the probe wakes the CLI (see `src/ai_usage/wake.py`)
+when the token expires within 10 minutes or the endpoint returns 401/403.
+
+Tested 2026-09-29 on Claude Code 2.1.284 with `expiresAt` forced into the past:
+
+- `claude auth status --json`, `claude doctor`: do not refresh.
+- `claude -p "/cost"` (local command): starts a refresh but exits mid-way, leaving a stale
+  `<config dir>.lock` directory. Unreliable.
+- `claude -p "Reply with: ok" --model haiku --max-turns 1 --tools "" --no-session-persistence`: refreshes
+  (new token, valid 8 h) in ~8 s.
+- Codex access tokens are JWTs valid 10 days; `codex exec --ephemeral` refreshes when needed. Under systemd
+  the nvm `node` is not on PATH, so the CLI directory is prepended.
+
+If the CLI cannot refresh, state `auth_expired`; the last good numbers are kept with state `stale`.
 
 ## Claude
 

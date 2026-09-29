@@ -40,13 +40,34 @@ class Store:
         remaining = [item for item in profiles if item.id != profile_id]
         if len(remaining) == len(profiles):
             return False
-        self._atomic_write_json(self.paths.config_path, {"profiles": [asdict(item) for item in remaining]})
+        self._write_config(profiles=remaining)
         return True
+
+    def _load_config(self) -> dict:
+        if not self.paths.config_path.exists():
+            return {}
+        return json.loads(self.paths.config_path.read_text())
+
+    def _write_config(self, profiles: list[Profile] | None = None, tools: dict[str, str] | None = None) -> None:
+        payload = self._load_config()
+        if profiles is not None:
+            payload["profiles"] = [asdict(item) for item in profiles]
+        if tools is not None:
+            payload["tools"] = tools
+        self._atomic_write_json(self.paths.config_path, payload)
+
+    def load_tools(self) -> dict[str, str]:
+        """Absolute CLI paths recorded by `setup`; the systemd timer runs with a minimal PATH."""
+        tools = self._load_config().get("tools")
+        return tools if isinstance(tools, dict) else {}
+
+    def save_tools(self, tools: dict[str, str]) -> None:
+        self._write_config(tools={**self.load_tools(), **tools})
 
     def load_profiles(self) -> list[Profile]:
         if not self.paths.config_path.exists():
             return []
-        data = json.loads(self.paths.config_path.read_text())
+        data = self._load_config()
         return [Profile(**item) for item in data.get("profiles", [])]
 
     def load_status_entries(self) -> dict[str, StatusEntry]:
@@ -87,8 +108,7 @@ class Store:
     def _save_profile(self, profile: Profile) -> None:
         profiles = [item for item in self.load_profiles() if item.id != profile.id]
         profiles.append(profile)
-        payload = {"profiles": [asdict(item) for item in profiles]}
-        self._atomic_write_json(self.paths.config_path, payload)
+        self._write_config(profiles=profiles)
 
     def _bootstrap_provider_home(self, provider: str, home: Path) -> None:
         if provider != "claude":

@@ -11,6 +11,7 @@ from pathlib import Path
 from ai_usage.paths import build_linked_env, build_profile_env, default_app_dir
 from ai_usage.providers import get_adapter
 from ai_usage.setup import run_setup
+from ai_usage.wake import CliWaker
 from ai_usage.store import Store
 
 PROVIDERS = ["claude", "codex"]
@@ -52,7 +53,10 @@ def build_parser() -> argparse.ArgumentParser:
     setup_parser.add_argument("--interval", default="5min", help="probe interval (systemd time span)")
     setup_parser.add_argument("--no-system", action="store_true", help="only link profiles")
 
-    subparsers.add_parser("probe")
+    probe_parser = subparsers.add_parser("probe")
+    probe_parser.add_argument(
+        "--no-wake", action="store_true", help="do not run the CLIs to refresh expired tokens"
+    )
 
     status_parser = subparsers.add_parser("status")
     status_parser.add_argument("--json", action="store_true")
@@ -60,13 +64,15 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def probe(store: Store) -> int:
+def probe(store: Store, wake: bool = True) -> int:
     now_iso = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     previous = store.load_status_entries()
     profiles = store.load_profiles()
+    waker = CliWaker(store.paths.root / "wake", store.load_tools()) if wake else None
 
     def run(profile):
-        entry = get_adapter(profile.provider).probe(profile, store.paths.provider_config_dir(profile), now_iso)
+        config_dir = store.paths.provider_config_dir(profile)
+        entry = get_adapter(profile.provider).probe(profile, config_dir, now_iso, wake=waker)
         return store.keep_last_known(entry, previous.get(profile.id))
 
     with ThreadPoolExecutor(max_workers=max(1, len(profiles))) as pool:
@@ -133,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
         return run_setup(store, args.root, args.interval, with_system=not args.no_system)
 
     if args.command == "probe":
-        return probe(store)
+        return probe(store, wake=not args.no_wake)
 
     if args.command == "status":
         return print_status(store, args.json)

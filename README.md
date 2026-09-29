@@ -24,7 +24,8 @@ ai-usage setup
 
 1. finds logged-in CLIs in `~/.claude`, `~/.claude-*`, `~/.codex`, `~/.codex-*` (plus `$CLAUDE_CONFIG_DIR` / `$CODEX_HOME`),
 2. enables the `ai-usage-probe.timer` systemd user timer,
-3. enables the GNOME extension.
+3. enables the GNOME extension,
+4. remembers where `claude` / `codex` live (the timer runs with a minimal `PATH`, e.g. without nvm).
 
 On first install GNOME Shell does not see the new extension until you **log out and back in**
 (on X11, Alt+F2 → `r` is enough). After that, run `gnome-extensions enable ai-usage@marekbartczak.github.io`
@@ -44,9 +45,13 @@ for `/usage` and `/status`. The result goes to `~/.local/share/ai-usage-module/s
 | Codex CLI | `<config dir>/auth.json` | `GET https://chatgpt.com/backend-api/wham/usage` |
 
 - Tokens never leave your machine except in requests to those two endpoints.
-- `ai-usage` never refreshes tokens in your CLI config dirs. Refresh tokens rotate, so refreshing from outside
-  would log your CLI out. If a token has expired (the CLI has not been used for a while), the last known numbers
-  stay on the bar, dimmed and marked stale, until you use that CLI again.
+- `ai-usage` never refreshes tokens itself. Refresh tokens rotate, so refreshing from outside would log your CLI out.
+  Instead, when a token is about to expire (Claude access tokens last ~8 h, e.g. overnight), it runs the CLI once
+  with a one-word prompt (`claude -p` on Haiku, `codex exec`), and the CLI refreshes its own token. That costs a
+  negligible amount of usage, runs at most once per 30 minutes per account, and can be turned off with
+  `ai-usage probe --no-wake` in the service.
+- If that fails (e.g. the refresh token itself expired after weeks without use), the last known numbers stay on
+  the bar, dimmed and marked stale, until you log in again.
 - **Both endpoints are undocumented** and may change or disappear without notice.
 
 ## Commands

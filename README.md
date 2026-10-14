@@ -3,17 +3,27 @@
 Claude Code and Codex CLI usage limits on the GNOME top bar: the 5-hour session and the weekly limit, in percent,
 for every account you are logged into.
 
-![Top bar](docs/screenshots/top-bar.png)
+Work and personal profiles grouped on the top bar, with a separate icon color for each group:
 
-![Menu](docs/screenshots/menu.png)
+![Top bar with Claude and Codex paired in work and personal groups](docs/screenshots/top-bar-groups.png)
 
-- One group per account on the top bar: 5-hour % (bright) and weekly % (dim). Yellow at 75 %, red at 90 %.
+The menu follows the same groups and colors. Expand an account for its limits, reset times, and top bar toggle:
+
+![Grouped account menu with Claude Work expanded and personal accounts in purple](docs/screenshots/menu-groups.png)
+
+Screenshots use example accounts.
+
+- Each account shows its 5-hour % (bright) and weekly % (dim). Yellow at 75 %, red at 90 %.
 - The menu shows every limit the API reports (including per-model weekly caps and extra usage) with time to reset.
 - "Show on top bar" picks which accounts sit on the bar. By default it shows the first Claude and the first Codex account.
 - Profiles that share a name (`claude-work` and `codex-work`) sit together in one frame on the bar and in one section of
   the menu. The first group keeps the panel color; the others tint their icons (purple, blue, green, teal).
   Settings → Top bar colors changes them.
 - Data refreshes every 5 minutes. "Refresh now" updates it immediately.
+
+Choose a custom icon color for each group in the extension preferences, or reset it to the automatic color:
+
+![Extension preferences with color controls for work and personal groups](docs/screenshots/preferences-colors.png)
 
 ## Install (Ubuntu / Debian, GNOME 45+)
 

@@ -7,16 +7,11 @@ import St from 'gi://St';
 import {iconPath} from './lib/iconRegistry.js';
 import {replaceRefreshTimer} from './lib/refreshScheduler.js';
 import {rebuildMenu} from './lib/menuBuilder.js';
-import {normalizeProfiles, panelProfiles, togglePanelId} from './lib/profileModel.js';
-import {readStatusFileAsync} from './lib/statusReader.js';
+import {groupProfiles, normalizeProfiles, panelProfiles, togglePanelId} from './lib/profileModel.js';
+import {readStatusFileAsync, statusFilePath} from './lib/statusReader.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
-
-function statusFilePath(settings) {
-    return settings.get_string('status-file-path') ||
-        GLib.build_filenamev([GLib.get_user_data_dir(), 'ai-usage-module', 'status.json']);
-}
 
 const SEVERITY_CLASSES = ['ai-usage-normal', 'ai-usage-warning', 'ai-usage-critical', 'ai-usage-unknown'];
 
@@ -47,13 +42,13 @@ class AiUsageIndicator extends PanelMenu.Button {
             y_align: Clutter.ActorAlign.CENTER,
         });
         this.add_child(this._box);
-        this.setProfiles([]);
+        this.setGroups([]);
     }
 
-    setProfiles(profiles) {
+    setGroups(groups) {
         this._box.destroy_all_children();
 
-        if (!profiles.length) {
+        if (!groups.length) {
             this._box.add_child(new St.Label({
                 text: 'AI --',
                 style_class: 'ai-usage-metric ai-usage-unknown',
@@ -62,32 +57,50 @@ class AiUsageIndicator extends PanelMenu.Button {
             return;
         }
 
-        for (const profile of profiles) {
-            const group = new St.BoxLayout({
-                style_class: profile.stale ? 'ai-usage-group ai-usage-stale' : 'ai-usage-group',
+        // A lone group is the whole indicator already; a frame only helps to tell several apart.
+        const framed = groups.length > 1;
+
+        for (const group of groups) {
+            const account = new St.BoxLayout({
+                style_class: framed ? 'ai-usage-account ai-usage-account-framed' : 'ai-usage-account',
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            const providerIconPath = iconPath(this._extensionPath, profile.provider);
 
-            if (providerIconPath) {
-                group.add_child(new St.Icon({
-                    gicon: Gio.FileIcon.new(Gio.File.new_for_path(providerIconPath)),
-                    icon_size: 16,
-                    style_class: 'system-status-icon ai-usage-icon',
-                    y_align: Clutter.ActorAlign.CENTER,
-                }));
-            }
-
-            const shortLabel = metricLabel();
-            const weekLabel = metricLabel();
-
-            setMetric(shortLabel, profile.shortWindow);
-            setMetric(weekLabel, profile.weekWindow);
-            weekLabel.add_style_class_name('ai-usage-week');
-            group.add_child(shortLabel);
-            group.add_child(weekLabel);
-            this._box.add_child(group);
+            for (const profile of group.profiles)
+                account.add_child(this._profileItem(profile, group.color));
+            this._box.add_child(account);
         }
+    }
+
+    _profileItem(profile, color) {
+        const item = new St.BoxLayout({
+            style_class: profile.stale ? 'ai-usage-group ai-usage-stale' : 'ai-usage-group',
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        const providerIconPath = iconPath(this._extensionPath, profile.provider);
+
+        if (providerIconPath) {
+            const icon = new St.Icon({
+                gicon: Gio.FileIcon.new(Gio.File.new_for_path(providerIconPath)),
+                icon_size: 16,
+                style_class: 'system-status-icon ai-usage-icon',
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+
+            if (color)
+                icon.style = `color: ${color};`;
+            item.add_child(icon);
+        }
+
+        const shortLabel = metricLabel();
+        const weekLabel = metricLabel();
+
+        setMetric(shortLabel, profile.shortWindow);
+        setMetric(weekLabel, profile.weekWindow);
+        weekLabel.add_style_class_name('ai-usage-week');
+        item.add_child(shortLabel);
+        item.add_child(weekLabel);
+        return item;
     }
 });
 
@@ -107,6 +120,7 @@ export default class AiUsageExtension extends Extension {
             this._settings.connect('changed::refresh-interval-seconds', () => this._restartRefreshTimer()),
             this._settings.connect('changed::status-file-path', () => this._restartMonitor()),
             this._settings.connect('changed::panel-profile-ids', () => this._render()),
+            this._settings.connect('changed::group-colors', () => this._render()),
         ];
         this._restartMonitor();
         this._restartRefreshTimer();
@@ -201,7 +215,10 @@ export default class AiUsageExtension extends Extension {
         const panelIds = panelProfiles(this._view, this._settings.get_strv('panel-profile-ids'))
             .map(profile => profile.id);
 
-        this._indicator.setProfiles(panelProfiles(this._view, panelIds));
+        this._indicator.setGroups(groupProfiles(
+            panelProfiles(this._view, panelIds),
+            this._settings.get_value('group-colors').recursiveUnpack()
+        ));
 
         if (this._indicator.menu.isOpen) {
             this._menuDirty = true;

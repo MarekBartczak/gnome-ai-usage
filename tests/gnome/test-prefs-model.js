@@ -3,6 +3,8 @@ import {
     MIN_REFRESH_INTERVAL_SECONDS,
     normalizeRefreshInterval,
     normalizeStatusFilePath,
+    rgbaToHex,
+    withGroupColor,
 } from '../../gnome-extension/ai-usage@marekbartczak.github.io/lib/prefsModel.js';
 
 function assertEqual(actual, expected, message) {
@@ -45,3 +47,12 @@ assertEqual(
     30,
     'refresh interval is rounded to the nearest integer'
 );
+
+assertEqual(rgbaToHex({red: 0.8627, green: 0.5412, blue: 0.8667}), '#dc8add', 'color button rgba becomes #rrggbb');
+assertEqual(rgbaToHex({red: 0, green: 1, blue: 0.0039}), '#00ff01', 'channels are zero-padded');
+
+const colors = {work: '#99c1f1'};
+
+assertEqual(JSON.stringify(withGroupColor(colors, 'home', '#dc8add')), '{"work":"#99c1f1","home":"#dc8add"}', 'sets a group color');
+assertEqual(JSON.stringify(withGroupColor(colors, 'work', null)), '{}', 'null removes the override');
+assertEqual(JSON.stringify(colors), '{"work":"#99c1f1"}', 'input map is not mutated');

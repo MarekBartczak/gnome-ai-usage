@@ -16,6 +16,11 @@
       <summary>Profiles on the top bar</summary>
       <description>Profile ids shown on the top bar. Empty means the first profile of each provider.</description>
     </key>
+    <key name="group-colors" type="a{ss}">
+      <default>{}</default>
+      <summary>Top bar group colors</summary>
+      <description>Icon color (#rrggbb) per profile group, keyed by the profile name after "claude-" / "codex-". Groups without an entry get an automatic color; the first group keeps the panel color.</description>
+    </key>
     <key name="refresh-command" type="s">
       <default>'systemctl --user start ai-usage-probe.service'</default>
       <summary>Refresh command</summary>

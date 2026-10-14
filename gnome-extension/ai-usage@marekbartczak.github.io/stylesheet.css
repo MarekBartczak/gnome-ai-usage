@@ -1,4 +1,6 @@
 .ai-usage-pill { spacing: 12px; }
+.ai-usage-account { spacing: 12px; }
+.ai-usage-account-framed { background-color: rgba(255, 255, 255, 0.09); border-radius: 999px; padding: 2px 10px; }
 .ai-usage-group { spacing: 4px; }
 .ai-usage-icon { padding: 0 2px 0 0; }
 .ai-usage-metric { min-width: 18px; text-align: center; }

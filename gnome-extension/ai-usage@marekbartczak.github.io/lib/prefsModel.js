@@ -22,6 +22,25 @@ export function normalizeRefreshInterval(value) {
     );
 }
 
+// Gdk.RGBA channels are 0..1 floats; group-colors stores #rrggbb.
+export function rgbaToHex({red, green, blue}) {
+    return `#${[red, green, blue]
+        .map(channel => Math.round(channel * 255).toString(16).padStart(2, '0'))
+        .join('')}`;
+}
+
+// A null color drops the override, so the group goes back to its automatic color.
+export function withGroupColor(colors, groupKey, color) {
+    const next = {...colors};
+
+    if (color)
+        next[groupKey] = color;
+    else
+        delete next[groupKey];
+
+    return next;
+}
+
 export {
     MAX_REFRESH_INTERVAL_SECONDS,
     MIN_REFRESH_INTERVAL_SECONDS,

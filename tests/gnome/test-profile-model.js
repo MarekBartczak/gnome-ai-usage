@@ -1,6 +1,7 @@
 import {
     formatDuration,
     formatResetIn,
+    groupProfiles,
     normalizeProfiles,
     panelProfiles,
     togglePanelId,
@@ -62,6 +63,31 @@ assertEqual(panelProfiles(view, []).map(p => p.id), ['claude-work', 'codex-main'
 assertEqual(panelProfiles(view, ['claude-priv', 'missing']).map(p => p.id), ['claude-priv'], 'explicit panel ids win');
 assertEqual(togglePanelId(view, [], 'claude-priv'), ['claude-work', 'codex-main', 'claude-priv'], 'toggle adds to defaults');
 assertEqual(togglePanelId(view, ['claude-priv', 'codex-main'], 'claude-priv'), ['codex-main'], 'toggle removes');
+
+assertEqual(view.profiles.map(p => p.group), ['main', 'work', 'priv'], 'group is the profile name without the provider');
+
+const accounts = normalizeProfiles({
+    profiles: ['claude-work', 'claude-home', 'codex-work', 'codex-home', 'codex-solo', 'odd'].map(id => ({
+        id,
+        provider: id.startsWith('codex') ? 'codex' : 'claude',
+        state: 'ok',
+        usage: [],
+    })),
+}, '');
+const groups = groupProfiles(accounts.profiles);
+
+assertEqual(groups.map(g => g.key), ['work', 'home', 'solo', 'odd'], 'groups keep the order of first appearance');
+assertEqual(groups.map(g => g.profiles.map(p => p.id)),
+    [['claude-work', 'codex-work'], ['claude-home', 'codex-home'], ['codex-solo'], ['odd']],
+    'claude-X and codex-X share a group');
+assertEqual(groups.map(g => g.color), [null, '#dc8add', '#99c1f1', '#8ff0a4'], 'first group keeps the default color');
+assertEqual(groups.map(g => g.custom), [false, false, false, false], 'auto colors are not custom');
+
+const custom = groupProfiles(accounts.profiles, {work: '#62A0EA', home: 'red', ghost: '#000000'});
+
+assertEqual(custom.map(g => g.color), ['#62a0ea', '#dc8add', '#99c1f1', '#8ff0a4'], 'valid custom colors win, invalid ones fall back');
+assertEqual(custom.map(g => g.custom), [true, false, false, false], 'custom flag marks overrides');
+assertEqual(custom[0].autoColor, null, 'auto color stays available for a reset');
 
 assertEqual(formatDuration(3 * 86400 + 2 * 3600), '3d 2h', 'days format');
 assertEqual(formatDuration(3700), '1h 1m', 'hours format');

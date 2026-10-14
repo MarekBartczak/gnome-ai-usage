@@ -1,4 +1,10 @@
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+
+function statusFilePath(settings) {
+    return settings.get_string('status-file-path') ||
+        GLib.build_filenamev([GLib.get_user_data_dir(), 'ai-usage-module', 'status.json']);
+}
 
 function decodeJson(bytes) {
     const text = new TextDecoder().decode(bytes);
@@ -64,5 +70,5 @@ async function readStatusFileAsync(path) {
     }
 }
 
-export {readStatusFile, readStatusFileAsync, sanitizeStatusData};
+export {readStatusFile, readStatusFileAsync, sanitizeStatusData, statusFilePath};
 export default readStatusFile;

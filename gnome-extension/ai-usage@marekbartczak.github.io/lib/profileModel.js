@@ -1,6 +1,9 @@
 const WARN_PERCENT = 75;
 const CRITICAL_PERCENT = 90;
 const PROVIDER_ORDER = ['claude', 'codex'];
+// Group accents on the top bar. No yellow or red: those mean 75 % / 90 % used.
+const GROUP_PALETTE = ['#dc8add', '#99c1f1', '#8ff0a4', '#93ddc2'];
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 const WINDOW_LABELS = {
     current_session: 'Session (5h)',
@@ -45,12 +48,20 @@ function shortWindowKeyForProvider(provider) {
     }
 }
 
+// Profiles share a group when they share a name: claude-work and codex-work are the same account.
+function groupKeyFor(profile) {
+    const prefix = `${profile.provider}-`;
+
+    return profile.id.startsWith(prefix) ? profile.id.slice(prefix.length) : profile.id;
+}
+
 function normalizeProfile(profile) {
     const usage = byWindow(profile.usage);
     const shortKey = shortWindowKeyForProvider(profile.provider);
 
     return {
         id: profile.id,
+        group: groupKeyFor(profile),
         provider: profile.provider,
         label: profile.label,
         account: profile.account ?? '',
@@ -89,6 +100,37 @@ export function panelProfiles(view, panelIds) {
     return PROVIDER_ORDER
         .map(provider => view.profiles.find(profile => profile.provider === provider))
         .filter(Boolean);
+}
+
+function autoGroupColor(index) {
+    return index === 0 ? null : GROUP_PALETTE[(index - 1) % GROUP_PALETTE.length];
+}
+
+// Top bar groups in order of first appearance. The first group keeps the panel's own color (null).
+export function groupProfiles(profiles, groupColors = {}) {
+    const groups = [];
+
+    for (const profile of profiles) {
+        let group = groups.find(item => item.key === profile.group);
+
+        if (!group) {
+            const custom = groupColors[profile.group];
+            const autoColor = autoGroupColor(groups.length);
+            const isCustom = HEX_COLOR.test(custom ?? '');
+
+            group = {
+                key: profile.group,
+                color: isCustom ? custom.toLowerCase() : autoColor,
+                autoColor,
+                custom: isCustom,
+                profiles: [],
+            };
+            groups.push(group);
+        }
+        group.profiles.push(profile);
+    }
+
+    return groups;
 }
 
 export function togglePanelId(view, panelIds, profileId) {

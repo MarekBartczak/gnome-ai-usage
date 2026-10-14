@@ -16,3 +16,9 @@ export function iconPath(extensionPath, provider) {
 
     return Gio.File.new_for_path(`${extensionPath}/icons/${basename}`).get_path();
 }
+
+export function providerGicon(extensionPath, provider) {
+    const path = iconPath(extensionPath, provider);
+
+    return path ? Gio.FileIcon.new(Gio.File.new_for_path(path)) : null;
+}

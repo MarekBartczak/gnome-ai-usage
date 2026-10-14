@@ -2,6 +2,7 @@ import {
     formatDuration,
     formatResetIn,
     groupProfiles,
+    menuGroups,
     normalizeProfiles,
     panelProfiles,
     togglePanelId,
@@ -97,3 +98,18 @@ assertEqual(formatResetIn(null), null, 'missing reset');
 const degraded = normalizeProfiles({profiles: []}, 'missing');
 
 assertEqual(degraded.primary, null, 'empty input has no primary');
+
+const mixed = normalizeProfiles({
+    profiles: ['claude-erli', 'claude-priv', 'codex-erli', 'codex-priv', 'codex-spare'].map(id => ({
+        id,
+        provider: id.split('-')[0],
+        state: 'ok',
+        usage: [],
+    })),
+}, '');
+const menu = menuGroups(mixed, ['claude-erli', 'codex-erli', 'claude-priv'], {spare: '#62a0ea'});
+
+assertEqual(menu.map(g => g.profiles.map(p => p.id)),
+    [['claude-erli', 'codex-erli'], ['claude-priv', 'codex-priv'], ['codex-spare']],
+    'menu lists top bar groups first, profiles off the bar join their group');
+assertEqual(menu.map(g => g.color), [null, '#dc8add', '#62a0ea'], 'menu groups use the top bar colors');

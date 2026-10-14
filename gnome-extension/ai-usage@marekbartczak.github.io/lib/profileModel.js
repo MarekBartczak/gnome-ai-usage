@@ -133,6 +133,14 @@ export function groupProfiles(profiles, groupColors = {}) {
     return groups;
 }
 
+// Menu groups: the top bar's groups first (so their colors match), then profiles that are not on the bar.
+export function menuGroups(view, panelIds, groupColors = {}) {
+    const onPanel = panelProfiles(view, panelIds);
+    const rest = view.profiles.filter(profile => !onPanel.includes(profile));
+
+    return groupProfiles([...onPanel, ...rest], groupColors);
+}
+
 export function togglePanelId(view, panelIds, profileId) {
     const current = panelProfiles(view, panelIds).map(profile => profile.id);
     const next = current.includes(profileId)

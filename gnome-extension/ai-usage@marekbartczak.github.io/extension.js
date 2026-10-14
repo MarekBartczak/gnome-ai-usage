@@ -4,10 +4,10 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 
-import {iconPath} from './lib/iconRegistry.js';
+import {providerGicon} from './lib/iconRegistry.js';
 import {replaceRefreshTimer} from './lib/refreshScheduler.js';
 import {rebuildMenu} from './lib/menuBuilder.js';
-import {groupProfiles, normalizeProfiles, panelProfiles, togglePanelId} from './lib/profileModel.js';
+import {groupProfiles, menuGroups, normalizeProfiles, panelProfiles, togglePanelId} from './lib/profileModel.js';
 import {readStatusFileAsync, statusFilePath} from './lib/statusReader.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
@@ -79,11 +79,11 @@ const AiUsageIndicator = GObject.registerClass({
             style_class: profile.stale ? 'ai-usage-group ai-usage-stale' : 'ai-usage-group',
             y_align: Clutter.ActorAlign.CENTER,
         });
-        const providerIconPath = iconPath(this._extensionPath, profile.provider);
+        const gicon = providerGicon(this._extensionPath, profile.provider);
 
-        if (providerIconPath) {
+        if (gicon) {
             const icon = new St.Icon({
-                gicon: Gio.FileIcon.new(Gio.File.new_for_path(providerIconPath)),
+                gicon,
                 icon_size: 16,
                 style_class: 'system-status-icon ai-usage-icon',
                 y_align: Clutter.ActorAlign.CENTER,
@@ -217,17 +217,21 @@ export default class AiUsageExtension extends Extension {
         const panelIds = panelProfiles(this._view, this._settings.get_strv('panel-profile-ids'))
             .map(profile => profile.id);
 
-        this._indicator.setGroups(groupProfiles(
-            panelProfiles(this._view, panelIds),
-            this._settings.get_value('group-colors').recursiveUnpack()
-        ));
+        const groupColors = this._settings.get_value('group-colors').recursiveUnpack();
+
+        this._indicator.setGroups(groupProfiles(panelProfiles(this._view, panelIds), groupColors));
 
         if (this._indicator.menu.isOpen) {
             this._menuDirty = true;
             return;
         }
         this._menuDirty = false;
-        rebuildMenu(this._indicator, this._view, panelIds, {
+        rebuildMenu(this._indicator, {
+            view: this._view,
+            panelIds,
+            groups: menuGroups(this._view, panelIds, groupColors),
+            extensionPath: this.path,
+        }, {
             onTogglePanel: profileId => {
                 this._settings.set_strv(
                     'panel-profile-ids',

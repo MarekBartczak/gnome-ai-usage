@@ -10,8 +10,9 @@ for every account you are logged into.
 - One group per account on the top bar: 5-hour % (bright) and weekly % (dim). Yellow at 75 %, red at 90 %.
 - The menu shows every limit the API reports (including per-model weekly caps and extra usage) with time to reset.
 - "Show on top bar" picks which accounts sit on the bar. By default it shows the first Claude and the first Codex account.
-- Profiles that share a name (`claude-work` and `codex-work`) sit together in one frame on the bar. The first group keeps
-  the panel color; the others tint their icons (purple, blue, green, teal). Settings → Top bar colors changes them.
+- Profiles that share a name (`claude-work` and `codex-work`) sit together in one frame on the bar and in one section of
+  the menu. The first group keeps the panel color; the others tint their icons (purple, blue, green, teal).
+  Settings → Top bar colors changes them.
 - Data refreshes every 5 minutes. "Refresh now" updates it immediately.
 
 ## Install (Ubuntu / Debian, GNOME 45+)

@@ -55,3 +55,22 @@ Description: Claude Code and Codex CLI usage limits on the GNOME top bar
  shows the 5-hour and weekly usage percentages in the GNOME Shell top bar.
  After installing, run "ai-usage setup" as your normal user.
 
+Package: gnome-ai-usage
+Architecture: all
+Version: 0.5.2
+Priority: optional
+Section: gnome
+Maintainer: Marek Bartczak <noreply@github.com>
+Depends: python3 (>= 3.11), gnome-shell (>= 45)
+Filename: pool/main/gnome-ai-usage_0.5.2_all.deb
+Size: 24892
+MD5sum: 3e3fe3e1e56e5d6a127b213f6ff2fbcf
+SHA1: 01932a75d2e307f0d759f706f8b260702ea5aeca
+SHA256: 6515e73c6b8c851de604cc8d170819f570c45860cff190ca5f2281453c8ff76a
+SHA512: a39795a75add9274d72abb55b078613bd0755c6ef01022ed055cb106831e770fdeda3734a4dc2dc4117cc7acceead534352782106065d7bd0abe920a852199ac
+Homepage: https://github.com/MarekBartczak/gnome-ai-usage
+Description: Claude Code and Codex CLI usage limits on the GNOME top bar
+ Reads the OAuth tokens of already logged-in Claude Code and Codex CLIs and
+ shows the 5-hour and weekly usage percentages in the GNOME Shell top bar.
+ After installing, run "ai-usage setup" as your normal user.
+

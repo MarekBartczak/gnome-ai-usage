@@ -31,8 +31,10 @@ function setMetric(label, window) {
     label.add_style_class_name(`ai-usage-${window.severity}`);
 }
 
-const AiUsageIndicator = GObject.registerClass(
-class AiUsageIndicator extends PanelMenu.Button {
+// A type name per module URL lets a fresh copy load from Looking Glass while the old class stays registered.
+const AiUsageIndicator = GObject.registerClass({
+    GTypeName: `AiUsageIndicator_${GLib.compute_checksum_for_string(GLib.ChecksumType.SHA256, import.meta.url, -1).slice(0, 12)}`,
+}, class AiUsageIndicator extends PanelMenu.Button {
     _init(extensionPath) {
         super._init(0.0, 'AI Usage');
         this._extensionPath = extensionPath;

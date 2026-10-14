@@ -31,6 +31,19 @@ signed with the key in `/usr/share/keyrings/`). New versions then arrive like an
 - or right away with `sudo apt update && sudo apt upgrade` / Software Updater.
 
 The CLI side takes effect immediately. GNOME Shell loads the new extension code after the next login.
+To switch the top bar to the new version without logging out, copy the installed extension to a fresh directory
+(GNOME caches modules by path) and load it from Looking Glass (**Alt+F2 → `lg`**):
+
+```sh
+dir=~/.cache/ai-usage-runtime/$(date +%s)/ai-usage@marekbartczak.github.io
+mkdir -p "${dir%/*}" && cp -r /usr/share/gnome-shell/extensions/ai-usage@marekbartczak.github.io "$dir" && echo "$dir"
+```
+
+```js
+const em = Main.extensionManager, u = 'ai-usage@marekbartczak.github.io', o = em.lookup(u); await em.unloadExtension(o); await em.loadExtension(em.createExtensionObject(u, Gio.File.new_for_path('<dir printed above>'), o.type)); [em.lookup(u).state, em.lookup(u).error]
+```
+
+`1,` means it is running. Keep the copy until the next login; it is unused afterwards.
 To turn off automatic installs but keep update notifications, delete
 `/etc/apt/apt.conf.d/52gnome-ai-usage-unattended`.
 

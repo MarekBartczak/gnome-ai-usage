@@ -5,5 +5,5 @@
   "shell-version": ["45", "46", "47", "48", "49", "50"],
   "settings-schema": "org.gnome.shell.extensions.ai-usage",
   "url": "https://github.com/MarekBartczak/gnome-ai-usage",
-  "version": 3
+  "version": 4
 }
